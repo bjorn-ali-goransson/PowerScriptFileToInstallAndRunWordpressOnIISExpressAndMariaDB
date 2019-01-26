@@ -1,4 +1,7 @@
-mariadb
-php
+mariadb*
+php*
 web
 !web/test.php
+applicationHost.config
+php.ini
+*.port
