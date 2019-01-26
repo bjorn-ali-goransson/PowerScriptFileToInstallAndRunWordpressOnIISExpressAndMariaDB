@@ -183,7 +183,7 @@ if($runningmariadbprocesses.Count -gt 0){
 Start-Process $mariadbpath -NoNewWindow -ArgumentList "--console --skip-grant-tables --port=$mariadbport"
 
 while($true){
-    $output = & $php "-c=""$phpinipath""" "-r ""`$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); if (`$conn->connect_error) { Write-Output `$conn->connect_error; exit; } `$conn->query('CREATE DATABASE IF NOT EXISTS wordpress'); Write-Output 'OK';"""
+    $output = & $php "-c=""$phpinipath""" "-r ""`$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); if (`$conn->connect_error) { echo `$conn->connect_error; exit; } `$conn->query('CREATE DATABASE IF NOT EXISTS wordpress'); echo 'OK';"""
 
     if($output -eq "OK"){
         break
