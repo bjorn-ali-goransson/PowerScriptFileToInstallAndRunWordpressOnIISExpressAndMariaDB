@@ -148,7 +148,7 @@ if (!(Test-Path $wordpresspath)) {
     }
 
     Write-Output "Installing Wordpress to $wordpresspath"
-    Expand-Archive $wordpresszippath -DestinationPath $wordpresspath
+    Expand-Archive $wordpresszippath -DestinationPath $cd
 }
 
 
@@ -176,12 +176,10 @@ if (!(Test-Path $applicationhostpath)) {
 
     & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/+[fullPath='$phppath',arguments='-c %u0022$phpinipath%u0022']" "/apphostconfig:""$applicationhostpath"""
     & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/[fullPath='$phppath',arguments='-c %u0022$phpinipath%u0022'].monitorChangesTo:""$phpinipath""" "/apphostconfig:""$applicationhostpath"""
-    # TODO : other settings
 
     & $appcmd "set" "config" "/section:system.webServer/handlers" "/+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='$phppath|-c %u0022$phpinipath%u0022',resourceType='Unspecified']" "/apphostconfig:""$applicationhostpath"""
 
     & $appcmd "list" "site" "/text:name" "/apphostconfig:""$applicationhostpath""" | ForEach-Object { & $appcmd "delete" "site" $_ "/apphostconfig:""$applicationhostpath""" }
-
     & $appcmd "add" "site" "/name:""Website""" "/physicalPath:""$wordpresspath""" "/bindings:http/:$iisport`:localhost" "/apphostconfig:""$applicationhostpath"""
 
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+""[name='Wordpress_Rewrite',stopProcessing='True']""" "/apphostconfig:""$applicationhostpath"""
@@ -201,13 +199,7 @@ if (!(Test-Path $applicationhostpath)) {
 ### START THE WEBSITE ###
 #########################
 
-$runningmariadbprocesses = Get-Process | Where-Object { $_.Path -eq $mariadbpath }
-
-if($runningmariadbprocesses.Count -gt 0){
-    Write-Output "MariaDB is already running"
-
-    $runningmariadbprocesses | Stop-Process
-}
+Get-Process | Where-Object { $_.Path -eq $mariadbpath } | Stop-Process
 
 Start-Process $mariadbpath -NoNewWindow -ArgumentList "--console --skip-grant-tables --port=$mariadbport"
 
