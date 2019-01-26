@@ -69,7 +69,7 @@ $runningmariadbprocesses = Get-Process | Where-Object { $_.Path -eq $mariadbpath
 if($runningmariadbprocesses.Count -gt 0){
     echo "MariaDB is already running"
 
-    #$runningmariadbprocesses | Stop-Process
+    $runningmariadbprocesses | Stop-Process
 }
 
 Start-Process $mariadbpath -NoNewWindow
