@@ -12,18 +12,45 @@ if (!(Test-Path $packagesdir)) {
 ### INSTALLATION OF PHP ###
 ###########################
 
-$phpdir = "$cd\php"
+$phpname = "php-7.3.1"
+$phpzipname = "$phpname-nts-Win32-VC15-x64.zip"
+$phpzippath = "$packagesdir\$phpzipname"
+$phpzipurl = "https://windows.php.net/downloads/releases/$phpzipname"
+$phpdir = "$cd\$phpname"
+$phppath = "$phpdir\php-cgi.exe"
+$php = "$phpdir\php.exe"
+$phpinipath = "$cd\php.ini"
 
-if (!(Test-Path "$cd\php.ini")) {
-    "extension_dir = ""ext""" | Set-Content "$cd\php.ini"
+if (!(Test-Path $phpdir)) {
+    echo "PHP ($phpname) not installed"
 
-    "extension=mysqli" | Add-Content "$cd\php.ini"
-    "extension=mbstring" | Add-Content "$cd\php.ini"
-    "extension=mcrypt" | Add-Content "$cd\php.ini"
+    if ((Test-Path $phpzippath)) {
+        echo "Already downloaded PHP to $phpzippath"
+    } else {
+        echo "Downloading PHP from $phpzipurl"
+
+        try {
+            Invoke-WebRequest -Uri $phpzipurl -OutFile $phpzippath
+        }
+        catch {
+            echo "ERROR: Could not download $phpzipurl`nPlease download it manually and put it here: $phpzippath"
+            exit
+        }
+    }
+
+    echo "Installing PHP to $phpdir"
+    Expand-Archive $phpzippath -DestinationPath $phpdir
+}
+
+if (!(Test-Path $phpinipath)) {
+    "extension_dir = ""ext""" | Set-Content $phpinipath
+
+    "extension=mysqli" | Add-Content $phpinipath
+    "extension=mbstring" | Add-Content $phpinipath
     
-    "" | Add-Content "$cd\php.ini"
+    "" | Add-Content $phpinipath
 
-    Get-Content "$phpdir\php.ini-development" | Add-Content "$cd\php.ini"
+    Get-Content "$phpdir\php.ini-development" | Add-Content $phpinipath
 }
 
 # Follow recommendations here
@@ -48,7 +75,7 @@ if(!(Test-Path $mariadbportpath)){
     Get-Random -Minimum 61000 -Maximum 62000 | Set-Content $mariadbportpath
 }
 
-$mariadbport = Get-Content $mariadbportpath
+$mariadbport = [int](Get-Content $mariadbportpath)
 
 if (!(Test-Path $mariadbdir)) {
     echo "MariaDB ($mariadbname) not installed"
@@ -64,6 +91,63 @@ if (!(Test-Path $mariadbdir)) {
     Expand-Archive $mariadbzippath -DestinationPath $cd
 }
 
+
+
+###################################
+### INSTALLATION OF IIS EXPRESS ###
+###################################
+
+# TODO: Install IIS Express, URL Rewrite
+# TODO: Create DB
+# $conn = new mysqli('localhost', 'root', ''); if (mysqli_connect_errno()) { exit('Connect failed: '. mysqli_connect_error()); } $sql = 'CREATE DATABASE `wptest` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci'; if ($conn->query($sql) === TRUE) { echo 'Database created successfully'; } else { echo 'Error creating database: ' . $conn->error; } $conn->close();
+
+$iisdir = "C:\Program Files (x86)\IIS Express"
+$iispath = "$iisdir\iisexpress.exe"
+$appcmd = "$iisdir\appcmd.exe"
+$applicationhostpath = "$cd\applicationHost.config"
+$iisportpath = "$cd\iis.port"
+
+if(!(Test-Path $iisportpath)){
+    Get-Random -Minimum 62000 -Maximum 63000 | Set-Content $iisportpath
+}
+
+$iisport = [int](Get-Content $iisportpath)
+
+if (!(Test-Path $applicationhostpath)) {
+    Copy "$iisdir\AppServer\applicationHost.config" $applicationhostpath
+
+    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/+[fullPath='$phpdir\php-cgi.exe',arguments='-c %u0022$cd\php.ini%u0022']" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/[fullPath='$phpdir\php-cgi.exe',arguments='-c %u0022$cd\php.ini%u0022'].monitorChangesTo:"$phpinipath"" "/apphostconfig:""$applicationhostpath"""
+    # TODO : other settings
+
+    & $appcmd "set" "config" "/section:system.webServer/handlers" "/+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='$phpdir\php-cgi.exe|-c %u0022$cd\php.ini%u0022',resourceType='Unspecified']" "/apphostconfig:""$applicationhostpath"""
+
+    $sites = & $appcmd "list" "site" "/text:name" "/apphostconfig:""$applicationhostpath"""
+
+    foreach( $line in $sites ){
+        $sitename = $line.Trim()
+        & $appcmd "delete" "site" $sitename "/apphostconfig:""$applicationhostpath"""
+    }
+
+    & $appcmd "add" "site" "/name:""Website""" "/physicalPath:""$cd\web""" "/bindings:http/:$iisport`:localhost" "/apphostconfig:""$applicationhostpath"""
+
+    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+""[name='Wordpress_Rewrite',stopProcessing='True']""" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].match.url:""(.*)""" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].conditions.logicalGrouping:""MatchAll""" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+[name='Wordpress_Rewrite'].conditions.[input='{REQUEST_FILENAME}',matchType='IsFile',negate='true']" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+[name='Wordpress_Rewrite'].conditions.[input='{REQUEST_FILENAME}',matchType='IsDirectory',negate='true']" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].action.type:""Rewrite""" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].action.url:""index.php""" "/apphostconfig:""$applicationhostpath"""
+
+    & $appcmd "set" "config" "/section:defaultDocument" "/+files.[value='index.php']" "/apphostconfig:""$applicationhostpath"""
+}
+
+
+
+#########################
+### START THE WEBSITE ###
+#########################
+
 $runningmariadbprocesses = Get-Process | Where-Object { $_.Path -eq $mariadbpath }
 
 if($runningmariadbprocesses.Count -gt 0){
@@ -72,60 +156,26 @@ if($runningmariadbprocesses.Count -gt 0){
     $runningmariadbprocesses | Stop-Process
 }
 
-Start-Process $mariadbpath -NoNewWindow
+Start-Process $mariadbpath -NoNewWindow -ArgumentList "--console --skip-grant-tables --port=$mariadbport"
+
+while($true){
+    $output = & $php "-c=""$phpinipath""" "-r `$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); if (`$conn->connect_error) { echo `$conn->connect_error; exit; } `$conn->query('CREATE DATABASE IF NOT EXISTS wordpress'); echo 'OK';"
+
+    if($output -eq "OK"){
+        break
+    }
+
+    Start-Sleep 1
+}
+
+& $php "-c=""$phpinipath""" "-r `$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); `$conn->query('CREATE DATABASE IF NOT EXISTS wordpress');"
+
+Start-Process "http://localhost:$iisport/"
+Start-Process $iispath -NoNewWindow "/config:""$applicationhostpath"""
 
 Read-Host "`nPress ENTER to kill`n`n" | Out-Null
 
+echo "Killing DB / IIS ...`n"
+
 Get-Process | Where-Object { $_.Path -eq $mariadbpath } | Stop-Process
-
-exit;
-
-
-
-###################################
-### INSTALLATION OF IIS EXPRESS ###
-###################################
-
-# TODO: Install IIS Express, URL Rewrite
-
-# TODO: Create DB
-# $conn = new mysqli('localhost', 'root', ''); if (mysqli_connect_errno()) { exit('Connect failed: '. mysqli_connect_error()); } $sql = 'CREATE DATABASE `wptest` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci'; if ($conn->query($sql) === TRUE) { echo 'Database created successfully'; } else { echo 'Error creating database: ' . $conn->error; } $conn->close();
-
-$iisdir = "C:\Program Files (x86)\IIS Express"
-$appcmd = "$iisdir\appcmd.exe"
-
-if (!(Test-Path "$cd\applicationHost.config")) {
-    Copy "$iisdir\AppServer\applicationHost.config" "applicationHost.config"
-
-    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/+[fullPath='$phpdir\php-cgi.exe',arguments='-c %u0022$cd\php.ini%u0022']" "/apphostconfig:""$cd\applicationHost.config"""
-    # TODO : Restart on php.ini changes
-    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/[fullPath='$phpdir\php-cgi.exe',arguments='-c %u0022$cd\php.ini%u0022'].monitorChangesTo:""$cd\php.ini""" "/apphostconfig:""$cd\applicationHost.config"""
-    # TODO : other settings
-
-    & $appcmd "set" "config" "/section:system.webServer/handlers" "/+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='$phpdir\php-cgi.exe|-c %u0022$cd\php.ini%u0022',resourceType='Unspecified']" "/apphostconfig:""$cd\applicationHost.config"""
-
-    $sites = & $appcmd "list" "site" "/text:name" "/apphostconfig:""$cd\applicationHost.config"""
-
-    foreach( $line in $sites ){
-        $sitename = $line.Trim()
-        & $appcmd "delete" "site" $sitename "/apphostconfig:""$cd\applicationHost.config"""
-    }
-
-    & $appcmd "add" "site" "/name:""Website""" "/physicalPath:""$cd\web""" "/bindings:http/:8080:localhost" "/apphostconfig:""$cd\applicationHost.config"""
-
-    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+""[name='Wordpress_Rewrite',stopProcessing='True']""" "/apphostconfig:""$cd\applicationHost.config"""
-    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].match.url:""(.*)""" "/apphostconfig:""$cd\applicationHost.config"""
-    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].conditions.logicalGrouping:""MatchAll""" "/apphostconfig:""$cd\applicationHost.config"""
-    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+[name='Wordpress_Rewrite'].conditions.[input='{REQUEST_FILENAME}',matchType='IsFile',negate='true']" "/apphostconfig:""$cd\applicationHost.config"""
-    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+[name='Wordpress_Rewrite'].conditions.[input='{REQUEST_FILENAME}',matchType='IsDirectory',negate='true']" "/apphostconfig:""$cd\applicationHost.config"""
-    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].action.type:""Rewrite""" "/apphostconfig:""$cd\applicationHost.config"""
-    & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].action.url:""index.php""" "/apphostconfig:""$cd\applicationHost.config"""
-
-    & $appcmd "set" "config" "/section:defaultDocument" "/+files.[value='index.php']" "/apphostconfig:""$cd\applicationHost.config"""
-}
-
-
-
-
-Start-Process "http://localhost:8080/test.php"
-& "$iisdir\iisexpress.exe" "/config:""$cd\applicationHost.config"""
+Get-Process | Where-Object { $_.Path -eq $iispath } | Stop-Process
