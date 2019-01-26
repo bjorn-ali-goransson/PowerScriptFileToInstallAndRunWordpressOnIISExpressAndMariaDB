@@ -1,7 +1,6 @@
 mariadb*
 php*
-web
-!web/test.php
+wordpress
 applicationHost.config
 php.ini
 *.port
