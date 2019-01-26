@@ -215,6 +215,8 @@ while($true){
 
 & $php "-c=""$phpinipath""" "-r `$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); `$conn->query('CREATE DATABASE IF NOT EXISTS wordpress');"
 
+#Get-WmiObject Win32_Process -Filter "name = 'iisexpress.exe'" | Where-Object { $_.CommandLine -eq """$iispath"" /config:""$applicationhostpath""" } | ForEach-Object { $e.terminate() }
+
 Start-Process "http://localhost:$iisport/"
 Start-Process $iispath -NoNewWindow "/config:""$applicationhostpath"""
 
