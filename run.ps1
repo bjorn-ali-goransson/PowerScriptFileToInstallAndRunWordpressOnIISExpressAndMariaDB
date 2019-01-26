@@ -8,6 +8,40 @@ if (!(Test-Path $packagesdir)) {
 
 
 
+###############################
+### INSTALLATION OF MARIADB ###
+###############################
+
+$mariadbname = "mariadb-10.3.12"
+$mariadbzipname = "$mariadbname-winx64.zip"
+$mariadbzippath = "$packagesdir\$mariadbzipname"
+$mariadbzipurl = "https://downloads.mariadb.org/f/$mariadbname/winx64-packages/$mariadbname-winx64.zip?serve"
+$mariadbdir = "$cd\$mariadbname-winx64"
+$mariadbpath = "$mariadbdir\bin\mysqld.exe"
+$mariadbportpath = "$cd\mariadb.port"
+
+if(!(Test-Path $mariadbportpath)){
+    Get-Random -Minimum 61000 -Maximum 62000 | Set-Content $mariadbportpath
+}
+
+$mariadbport = [int](Get-Content $mariadbportpath)
+
+if (!(Test-Path $mariadbdir)) {
+    Write-Output "MariaDB ($mariadbname) not installed"
+
+    if ((Test-Path $mariadbzippath)) {
+        Write-Output "Already downloaded MariaDB to $mariadbzippath"
+    } else {
+        Write-Output "Downloading MariaDB from $mariadbzipurl"
+        Invoke-WebRequest -Uri $mariadbzipurl -OutFile $mariadbzippath
+    }
+
+    Write-Output "Installing MariaDB to $mariadbdir"
+    Expand-Archive $mariadbzippath -DestinationPath $cd
+}
+
+
+
 ###########################
 ### INSTALLATION OF PHP ###
 ###########################
@@ -140,18 +174,13 @@ $iisport = [int](Get-Content $iisportpath)
 if (!(Test-Path $applicationhostpath)) {
     Copy-Item "$iisdir\AppServer\applicationHost.config" $applicationhostpath
 
-    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/+[fullPath='$phppath',arguments='-c %u0022$cd\php.ini%u0022']" "/apphostconfig:""$applicationhostpath"""
-    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/[fullPath='$phppath',arguments='-c %u0022$cd\php.ini%u0022'].monitorChangesTo:"$phpinipath"" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/+[fullPath='$phppath',arguments='-c %u0022$phpinipath%u0022']" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/[fullPath='$phppath',arguments='-c %u0022$phpinipath%u0022'].monitorChangesTo:""$phpinipath""" "/apphostconfig:""$applicationhostpath"""
     # TODO : other settings
 
-    & $appcmd "set" "config" "/section:system.webServer/handlers" "/+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='$phppath|-c %u0022$cd\php.ini%u0022',resourceType='Unspecified']" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "/section:system.webServer/handlers" "/+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='$phppath|-c %u0022$phpinipath%u0022',resourceType='Unspecified']" "/apphostconfig:""$applicationhostpath"""
 
-    $sites = & $appcmd "list" "site" "/text:name" "/apphostconfig:""$applicationhostpath"""
-
-    foreach($line in $sites){
-        $sitename = $line.Trim()
-        & $appcmd "delete" "site" $sitename "/apphostconfig:""$applicationhostpath"""
-    }
+    & $appcmd "list" "site" "/text:name" "/apphostconfig:""$applicationhostpath""" | ForEach-Object { & $appcmd "delete" "site" $_ "/apphostconfig:""$applicationhostpath""" }
 
     & $appcmd "add" "site" "/name:""Website""" "/physicalPath:""$wordpresspath""" "/bindings:http/:$iisport`:localhost" "/apphostconfig:""$applicationhostpath"""
 
@@ -183,7 +212,7 @@ if($runningmariadbprocesses.Count -gt 0){
 Start-Process $mariadbpath -NoNewWindow -ArgumentList "--console --skip-grant-tables --port=$mariadbport"
 
 while($true){
-    $output = & $php "-c=""$phpinipath""" "-r ""`$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); if (`$conn->connect_error) { echo `$conn->connect_error; exit; } `$conn->query('CREATE DATABASE IF NOT EXISTS wordpress'); echo 'OK';"""
+    $output = & $php "-c=""$phpinipath""" "-r `$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); if (`$conn->connect_error) { echo `$conn->connect_error; exit; } echo 'OK';"
 
     if($output -eq "OK"){
         break
