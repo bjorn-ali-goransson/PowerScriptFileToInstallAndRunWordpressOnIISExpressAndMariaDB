@@ -1,1 +1,0 @@
-start "" "%~dp0\mariadb\bin\mysqld" --console --skip-grant-tables
