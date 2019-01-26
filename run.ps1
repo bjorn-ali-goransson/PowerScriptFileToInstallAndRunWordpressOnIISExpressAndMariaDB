@@ -2,6 +2,7 @@ $cd = $PSScriptRoot
 
 $iisdir = "C:\Program Files (x86)\IIS Express"
 $phpdir = "$cd\php"
+$dbdir = "$cd\mariadb"
 
 $appcmd = "$iisdir\appcmd.exe"
 
@@ -19,7 +20,7 @@ if (!(Test-Path "$cd\applicationHost.config")) {
     }
 
     & $appcmd "add" "site" "/name:""Website""" "/physicalPath:""$cd\web""" "/bindings:http/:8080:localhost" "/apphostconfig:""$cd\applicationHost.config"""
-    
+
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+""[name='Wordpress_Rewrite',stopProcessing='True']""" "/apphostconfig:""$cd\applicationHost.config"""
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].match.url:""(.*)""" "/apphostconfig:""$cd\applicationHost.config"""
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].conditions.logicalGrouping:""MatchAll""" "/apphostconfig:""$cd\applicationHost.config"""
@@ -30,6 +31,17 @@ if (!(Test-Path "$cd\applicationHost.config")) {
 
     & $appcmd "set" "config" "/section:defaultDocument" "/+files.[value='index.php']" "/apphostconfig:""$cd\applicationHost.config"""
 }
+
+
+#$Process = [Diagnostics.Process]::Start("$db\bin\mysqld --console --skip-grant-tables")
+#$id = $Process.Id
+#try {
+#    Stop-Process -Id $id -ErrorAction stop
+#    Write-Host "Successfully killed the process with ID: $ID"
+#} catch {
+#    Write-Host "Failed to kill the process"
+#}
+
 
 Start-Process "http://localhost:8080/test.php"
 & "$iisdir\iisexpress.exe" "/config:""$cd\applicationHost.config"""
