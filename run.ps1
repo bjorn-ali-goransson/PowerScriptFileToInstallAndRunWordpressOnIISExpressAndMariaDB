@@ -27,7 +27,9 @@ if (!(Test-Path "$cd\applicationHost.config")) {
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+[name='Wordpress_Rewrite'].conditions.[input='{REQUEST_FILENAME}',matchType='IsDirectory',negate='true']" "/apphostconfig:""$cd\applicationHost.config"""
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].action.type:""Rewrite""" "/apphostconfig:""$cd\applicationHost.config"""
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].action.url:""index.php""" "/apphostconfig:""$cd\applicationHost.config"""
+
+    & $appcmd "set" "config" "/section:defaultDocument" "/+files.[value='index.php']" "/apphostconfig:""$cd\applicationHost.config"""
 }
 
-# start "Web server" "$iisdir\iisexpress.exe" /config:"%cd%\applicationHost.config"
-# start "" http://localhost:8080/test.php
+Start-Process "http://localhost:8080/test.php"
+& "$iisdir\iisexpress.exe" "/config:""$cd\applicationHost.config"""
