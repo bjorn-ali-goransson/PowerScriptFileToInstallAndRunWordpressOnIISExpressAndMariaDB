@@ -93,13 +93,37 @@ if (!(Test-Path $mariadbdir)) {
 
 
 
+#########################
+### INSTALL WORDPRESS ###
+#########################
+
+$wordpresspath = "$cd\wordpress"
+$wordpresszipurl = "https://wordpress.org/latest.zip"
+$wordpresszippath = "$packagesdir\wordpress.zip"
+
+if (!(Test-Path $wordpresspath)) {
+    Write-Output "Wordpress not installed"
+    Write-Output "Downloading Wordpress from $wordpresszipurl"
+
+    try {
+        Invoke-WebRequest -Uri $wordpresszipurl -OutFile $wordpresszippath
+    }
+    catch {
+        Write-Output "ERROR: Could not download $wordpresszipurl"
+        exit
+    }
+
+    Write-Output "Installing Wordpress to $wordpresspath"
+    Expand-Archive $wordpresszippath -DestinationPath $wordpresspath
+}
+
+
+
 ###################################
 ### INSTALLATION OF IIS EXPRESS ###
 ###################################
 
 # TODO: Install IIS Express, URL Rewrite
-# TODO: Create DB
-# $conn = new mysqli('localhost', 'root', ''); if (mysqli_connect_errno()) { exit('Connect failed: '. mysqli_connect_error()); } $sql = 'CREATE DATABASE `wptest` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci'; if ($conn->query($sql) === TRUE) { Write-Output 'Database created successfully'; } else { Write-Output 'Error creating database: ' . $conn->error; } $conn->close();
 
 $iisdir = "C:\Program Files (x86)\IIS Express"
 $iispath = "$iisdir\iisexpress.exe"
@@ -124,12 +148,12 @@ if (!(Test-Path $applicationhostpath)) {
 
     $sites = & $appcmd "list" "site" "/text:name" "/apphostconfig:""$applicationhostpath"""
 
-    foreach( $line in $sites ){
+    foreach($line in $sites){
         $sitename = $line.Trim()
         & $appcmd "delete" "site" $sitename "/apphostconfig:""$applicationhostpath"""
     }
 
-    & $appcmd "add" "site" "/name:""Website""" "/physicalPath:""$cd\web""" "/bindings:http/:$iisport`:localhost" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "add" "site" "/name:""Website""" "/physicalPath:""$wordpresspath""" "/bindings:http/:$iisport`:localhost" "/apphostconfig:""$applicationhostpath"""
 
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+""[name='Wordpress_Rewrite',stopProcessing='True']""" "/apphostconfig:""$applicationhostpath"""
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].match.url:""(.*)""" "/apphostconfig:""$applicationhostpath"""
@@ -140,35 +164,6 @@ if (!(Test-Path $applicationhostpath)) {
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].action.url:""index.php""" "/apphostconfig:""$applicationhostpath"""
 
     & $appcmd "set" "config" "/section:defaultDocument" "/+files.[value='index.php']" "/apphostconfig:""$applicationhostpath"""
-}
-
-
-
-#########################
-### INSTALL WORDPRESS ###
-#########################
-
-$webdir = "$cd\web"
-
-if (!(Test-Path "$webdir")) {
-    Write-Output "Wordpress not installed"
-
-    if ((Test-Path $phpzippath)) {
-        Write-Output "Already downloaded PHP to $phpzippath"
-    } else {
-        Write-Output "Downloading PHP from $phpzipurl"
-
-        try {
-            Invoke-WebRequest -Uri $phpzipurl -OutFile $phpzippath
-        }
-        catch {
-            Write-Output "ERROR: Could not download $phpzipurl`nPlease download it manually and put it here: $phpzippath"
-            exit
-        }
-    }
-
-    Write-Output "Installing PHP to $phpdir"
-    Expand-Archive $phpzippath -DestinationPath $phpdir
 }
 
 
@@ -188,7 +183,7 @@ if($runningmariadbprocesses.Count -gt 0){
 Start-Process $mariadbpath -NoNewWindow -ArgumentList "--console --skip-grant-tables --port=$mariadbport"
 
 while($true){
-    $output = & $php "-c=""$phpinipath""" "-r `$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); if (`$conn->connect_error) { Write-Output `$conn->connect_error; exit; } `$conn->query('CREATE DATABASE IF NOT EXISTS wordpress'); Write-Output 'OK';"
+    $output = & $php "-c=""$phpinipath""" "-r ""`$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); if (`$conn->connect_error) { Write-Output `$conn->connect_error; exit; } `$conn->query('CREATE DATABASE IF NOT EXISTS wordpress'); Write-Output 'OK';"""
 
     if($output -eq "OK"){
         break
