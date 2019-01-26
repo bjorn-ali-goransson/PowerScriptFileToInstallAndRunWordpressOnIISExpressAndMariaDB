@@ -151,6 +151,17 @@ if (!(Test-Path $wordpresspath)) {
     Expand-Archive $wordpresszippath -DestinationPath $cd
 }
 
+if(!(Test-Path "$wordpresspath\wp-config.php")) {
+    $wpconfig = Get-Content "$wordpresspath\wp-config-sample.php"
+
+    $wpconfig = $wpconfig -replace "database_name_here", "wordpress"
+    $wpconfig = $wpconfig -replace "username_here", ""
+    $wpconfig = $wpconfig -replace "password_here", ""
+    $wpconfig = $wpconfig -replace "localhost", "127.0.0.1:$mariadbport"
+
+    $wpconfig | Set-Content "$wordpresspath\wp-config.php"
+}
+
 
 
 ###################################
