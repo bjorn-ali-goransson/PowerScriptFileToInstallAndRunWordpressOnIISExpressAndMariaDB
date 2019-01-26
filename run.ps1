@@ -22,23 +22,23 @@ $php = "$phpdir\php.exe"
 $phpinipath = "$cd\php.ini"
 
 if (!(Test-Path $phpdir)) {
-    echo "PHP ($phpname) not installed"
+    Write-Output "PHP ($phpname) not installed"
 
     if ((Test-Path $phpzippath)) {
-        echo "Already downloaded PHP to $phpzippath"
+        Write-Output "Already downloaded PHP to $phpzippath"
     } else {
-        echo "Downloading PHP from $phpzipurl"
+        Write-Output "Downloading PHP from $phpzipurl"
 
         try {
             Invoke-WebRequest -Uri $phpzipurl -OutFile $phpzippath
         }
         catch {
-            echo "ERROR: Could not download $phpzipurl`nPlease download it manually and put it here: $phpzippath"
+            Write-Output "ERROR: Could not download $phpzipurl`nPlease download it manually and put it here: $phpzippath"
             exit
         }
     }
 
-    echo "Installing PHP to $phpdir"
+    Write-Output "Installing PHP to $phpdir"
     Expand-Archive $phpzippath -DestinationPath $phpdir
 }
 
@@ -78,16 +78,16 @@ if(!(Test-Path $mariadbportpath)){
 $mariadbport = [int](Get-Content $mariadbportpath)
 
 if (!(Test-Path $mariadbdir)) {
-    echo "MariaDB ($mariadbname) not installed"
+    Write-Output "MariaDB ($mariadbname) not installed"
 
     if ((Test-Path $mariadbzippath)) {
-        echo "Already downloaded MariaDB to $mariadbzippath"
+        Write-Output "Already downloaded MariaDB to $mariadbzippath"
     } else {
-        echo "Downloading MariaDB from $mariadbzipurl"
+        Write-Output "Downloading MariaDB from $mariadbzipurl"
         Invoke-WebRequest -Uri $mariadbzipurl -OutFile $mariadbzippath
     }
 
-    echo "Installing MariaDB to $mariadbdir"
+    Write-Output "Installing MariaDB to $mariadbdir"
     Expand-Archive $mariadbzippath -DestinationPath $cd
 }
 
@@ -99,7 +99,7 @@ if (!(Test-Path $mariadbdir)) {
 
 # TODO: Install IIS Express, URL Rewrite
 # TODO: Create DB
-# $conn = new mysqli('localhost', 'root', ''); if (mysqli_connect_errno()) { exit('Connect failed: '. mysqli_connect_error()); } $sql = 'CREATE DATABASE `wptest` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci'; if ($conn->query($sql) === TRUE) { echo 'Database created successfully'; } else { echo 'Error creating database: ' . $conn->error; } $conn->close();
+# $conn = new mysqli('localhost', 'root', ''); if (mysqli_connect_errno()) { exit('Connect failed: '. mysqli_connect_error()); } $sql = 'CREATE DATABASE `wptest` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci'; if ($conn->query($sql) === TRUE) { Write-Output 'Database created successfully'; } else { Write-Output 'Error creating database: ' . $conn->error; } $conn->close();
 
 $iisdir = "C:\Program Files (x86)\IIS Express"
 $iispath = "$iisdir\iisexpress.exe"
@@ -114,13 +114,13 @@ if(!(Test-Path $iisportpath)){
 $iisport = [int](Get-Content $iisportpath)
 
 if (!(Test-Path $applicationhostpath)) {
-    Copy "$iisdir\AppServer\applicationHost.config" $applicationhostpath
+    Copy-Item "$iisdir\AppServer\applicationHost.config" $applicationhostpath
 
-    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/+[fullPath='$phpdir\php-cgi.exe',arguments='-c %u0022$cd\php.ini%u0022']" "/apphostconfig:""$applicationhostpath"""
-    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/[fullPath='$phpdir\php-cgi.exe',arguments='-c %u0022$cd\php.ini%u0022'].monitorChangesTo:"$phpinipath"" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/+[fullPath='$phppath',arguments='-c %u0022$cd\php.ini%u0022']" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "/section:system.webServer/fastCGI" "/[fullPath='$phppath',arguments='-c %u0022$cd\php.ini%u0022'].monitorChangesTo:"$phpinipath"" "/apphostconfig:""$applicationhostpath"""
     # TODO : other settings
 
-    & $appcmd "set" "config" "/section:system.webServer/handlers" "/+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='$phpdir\php-cgi.exe|-c %u0022$cd\php.ini%u0022',resourceType='Unspecified']" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "set" "config" "/section:system.webServer/handlers" "/+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='$phppath|-c %u0022$cd\php.ini%u0022',resourceType='Unspecified']" "/apphostconfig:""$applicationhostpath"""
 
     $sites = & $appcmd "list" "site" "/text:name" "/apphostconfig:""$applicationhostpath"""
 
@@ -145,13 +145,42 @@ if (!(Test-Path $applicationhostpath)) {
 
 
 #########################
+### INSTALL WORDPRESS ###
+#########################
+
+$webdir = "$cd\web"
+
+if (!(Test-Path "$webdir")) {
+    Write-Output "Wordpress not installed"
+
+    if ((Test-Path $phpzippath)) {
+        Write-Output "Already downloaded PHP to $phpzippath"
+    } else {
+        Write-Output "Downloading PHP from $phpzipurl"
+
+        try {
+            Invoke-WebRequest -Uri $phpzipurl -OutFile $phpzippath
+        }
+        catch {
+            Write-Output "ERROR: Could not download $phpzipurl`nPlease download it manually and put it here: $phpzippath"
+            exit
+        }
+    }
+
+    Write-Output "Installing PHP to $phpdir"
+    Expand-Archive $phpzippath -DestinationPath $phpdir
+}
+
+
+
+#########################
 ### START THE WEBSITE ###
 #########################
 
 $runningmariadbprocesses = Get-Process | Where-Object { $_.Path -eq $mariadbpath }
 
 if($runningmariadbprocesses.Count -gt 0){
-    echo "MariaDB is already running"
+    Write-Output "MariaDB is already running"
 
     $runningmariadbprocesses | Stop-Process
 }
@@ -159,7 +188,7 @@ if($runningmariadbprocesses.Count -gt 0){
 Start-Process $mariadbpath -NoNewWindow -ArgumentList "--console --skip-grant-tables --port=$mariadbport"
 
 while($true){
-    $output = & $php "-c=""$phpinipath""" "-r `$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); if (`$conn->connect_error) { echo `$conn->connect_error; exit; } `$conn->query('CREATE DATABASE IF NOT EXISTS wordpress'); echo 'OK';"
+    $output = & $php "-c=""$phpinipath""" "-r `$conn = mysqli_connect('127.0.0.1:$mariadbport', '', ''); if (`$conn->connect_error) { Write-Output `$conn->connect_error; exit; } `$conn->query('CREATE DATABASE IF NOT EXISTS wordpress'); Write-Output 'OK';"
 
     if($output -eq "OK"){
         break
@@ -175,7 +204,7 @@ Start-Process $iispath -NoNewWindow "/config:""$applicationhostpath"""
 
 Read-Host "`nPress ENTER to kill`n`n" | Out-Null
 
-echo "Killing DB / IIS ...`n"
+Write-Output "Killing DB / IIS ...`n"
 
 Get-Process | Where-Object { $_.Path -eq $mariadbpath } | Stop-Process
 Get-Process | Where-Object { $_.Path -eq $iispath } | Stop-Process
