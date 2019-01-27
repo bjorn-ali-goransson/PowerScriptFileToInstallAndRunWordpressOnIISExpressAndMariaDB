@@ -81,6 +81,7 @@ if (!(Test-Path $phpinipath)) {
 
     "extension=mysqli" | Add-Content $phpinipath
     "extension=mbstring" | Add-Content $phpinipath
+    "extension=openssl" | Add-Content $phpinipath
 
     # TODO: Fix error_reporting = E_COMPILE_ERROR|E_RECOVERABLE_ERROR|E_ERROR|E_CORE_ERROR
     
