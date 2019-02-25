@@ -96,40 +96,6 @@ if (!(Test-Path $phpinipath)) {
 
 
 
-###############################
-### INSTALLATION OF MARIADB ###
-###############################
-
-$mariadbname = "mariadb-10.3.12"
-$mariadbzipname = "$mariadbname-winx64.zip"
-$mariadbzippath = "$packagesdir\$mariadbzipname"
-$mariadbzipurl = "https://downloads.mariadb.org/f/$mariadbname/winx64-packages/$mariadbname-winx64.zip?serve"
-$mariadbdir = "$cd\$mariadbname-winx64"
-$mariadbpath = "$mariadbdir\bin\mysqld.exe"
-$mariadbportpath = "$cd\mariadb.port"
-
-if(!(Test-Path $mariadbportpath)){
-    Get-Random -Minimum 61000 -Maximum 62000 | Set-Content $mariadbportpath
-}
-
-$mariadbport = [int](Get-Content $mariadbportpath)
-
-if (!(Test-Path $mariadbdir)) {
-    Write-Output "MariaDB ($mariadbname) not installed"
-
-    if ((Test-Path $mariadbzippath)) {
-        Write-Output "Already downloaded MariaDB to $mariadbzippath"
-    } else {
-        Write-Output "Downloading MariaDB from $mariadbzipurl"
-        Invoke-WebRequest -Uri $mariadbzipurl -OutFile $mariadbzippath
-    }
-
-    Write-Output "Installing MariaDB to $mariadbdir"
-    Expand-Archive $mariadbzippath -DestinationPath $cd
-}
-
-
-
 #########################
 ### INSTALL WORDPRESS ###
 #########################
