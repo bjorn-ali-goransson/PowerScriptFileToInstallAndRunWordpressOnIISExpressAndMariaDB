@@ -6,6 +6,12 @@ if (!(Test-Path $packagesdir)) {
     New-Item -Path $packagesdir -ItemType "directory"
 }
 
+$webdir = "$cd\web"
+
+if (!(Test-Path $webdir)) {
+    New-Item -Path $webdir -ItemType "directory"
+}
+
 
 
 ###############################
@@ -100,7 +106,7 @@ if (!(Test-Path $phpinipath)) {
 ### INSTALL WORDPRESS ###
 #########################
 
-$wordpresspath = "$cd\wordpress"
+$wordpresspath = "$webdir\wordpress"
 $wordpresszipurl = "https://wordpress.org/latest.zip"
 $wordpresszippath = "$packagesdir\wordpress.zip"
 
@@ -117,7 +123,7 @@ if (!(Test-Path $wordpresspath)) {
     }
 
     Write-Output "Installing Wordpress to $wordpresspath"
-    Expand-Archive $wordpresszippath -DestinationPath $cd
+    Expand-Archive $wordpresszippath -DestinationPath $webdir
 }
 
 if(!(Test-Path "$wordpresspath\wp-config.php")) {
@@ -160,7 +166,7 @@ if (!(Test-Path $applicationhostpath)) {
     & $appcmd "set" "config" "/section:system.webServer/handlers" "/+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='$phppath|-c %u0022$phpinipath%u0022',resourceType='Unspecified']" "/apphostconfig:""$applicationhostpath"""
 
     & $appcmd "list" "site" "/text:name" "/apphostconfig:""$applicationhostpath""" | ForEach-Object { & $appcmd "delete" "site" $_ "/apphostconfig:""$applicationhostpath""" }
-    & $appcmd "add" "site" "/name:""Website""" "/physicalPath:""$wordpresspath""" "/bindings:http/:$iisport`:localhost" "/apphostconfig:""$applicationhostpath"""
+    & $appcmd "add" "site" "/name:""Website""" "/physicalPath:""$webdir""" "/bindings:http/:$iisport`:localhost" "/apphostconfig:""$applicationhostpath"""
 
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/+""[name='Wordpress_Rewrite',stopProcessing='True']""" "/apphostconfig:""$applicationhostpath"""
     & $appcmd "set" "config" "-section:system.webServer/rewrite/rules" "/[name='Wordpress_Rewrite'].match.url:""(.*)""" "/apphostconfig:""$applicationhostpath"""
