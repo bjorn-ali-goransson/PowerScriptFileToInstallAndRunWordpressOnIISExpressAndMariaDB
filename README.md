@@ -2,13 +2,18 @@ Installs MariaDB, PHP and Wordpress to a new IIS Express site.
 
 Does not modify the computers configuration - everything is installed locally in the projects root folder.
 
-Create a projects root folder somewhere (like C:\Dev\wp) and then a project folder (like C:\Dev\wp\fabrikam). Paste the run.ps1 script in there and go `ps run.ps1` from the command prompt.
+Create a projects root folder somewhere (like C:\Dev\wp) and then a project folder (like C:\Dev\wp\fabrikam).
+
+Paste the run.ps1 script in there and go `ps run.ps1` from the command prompt.
 
     projects-root
-    `--packages
-    `--project1
-    `--project2
+    `--packages    # Cached download files
+    `--fabrikam
+       `--mariadb  # Your portable MariaDB installation
+       `--php      # Your portable PHP installation
+       `--web      # Your web files (including wordpress)
+       `--...      other stuff
 
-The only thing shared between projects are downloaded zip files.
+The only thing shared between projects are some cached downloaded zip files.
 
-You can later start the site by running `"C:\Program Files (x86)\IIS Express\iisexpress.exe" -NoNewWindow "/config:"C:\Dev\wp\fabrikam\applicationHost.config"`
+Press enter to kill everything. Run `ps run.ps1` to start again.
