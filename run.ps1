@@ -110,7 +110,7 @@ $wordpresspath = "$webdir\wordpress"
 $wordpresszipurl = "https://wordpress.org/latest.zip"
 $wordpresszippath = "$packagesdir\wordpress.zip"
 
-if (!(Test-Path $wordpresspath)) {
+if (!(Test-Path "$webdir\wp-admin")) {
     Write-Output "Wordpress not installed"
     Write-Output "Downloading Wordpress from $wordpresszipurl"
 
@@ -124,6 +124,9 @@ if (!(Test-Path $wordpresspath)) {
 
     Write-Output "Installing Wordpress to $wordpresspath"
     Expand-Archive $wordpresszippath -DestinationPath $webdir
+
+    Get-ChildItem -Path $wordpresspath | Move-Item -Destination $webdir
+    Remove-Item -Path $wordpresspath
 }
 
 if(!(Test-Path "$wordpresspath\wp-config.php")) {
