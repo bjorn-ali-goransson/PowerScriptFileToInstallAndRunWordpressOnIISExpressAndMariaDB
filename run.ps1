@@ -1,6 +1,5 @@
 $cd = $PSScriptRoot
-
-$packagesdir = [System.IO.Path]::GetFullPath("$cd\..\packages")
+$packagesdir = [System.IO.Path]::GetFullPath("$($env:USERPROFILE)\.wpnib\packages")
 
 if (!(Test-Path $packagesdir)) {
     New-Item -Path $packagesdir -ItemType "directory"
@@ -18,7 +17,7 @@ if (!(Test-Path $webdir)) {
 ### INSTALLATION OF MARIADB ###
 ###############################
 
-$mariadbname = "mariadb-10.3.12"
+$mariadbname = "mariadb-10.3.13"
 $mariadbzipname = "$mariadbname-winx64.zip"
 $mariadbzippath = "$packagesdir\$mariadbzipname"
 $mariadbzipurl = "https://downloads.mariadb.org/f/$mariadbname/winx64-packages/$mariadbname-winx64.zip?serve"
@@ -52,7 +51,7 @@ if (!(Test-Path $mariadbdir)) {
 ### INSTALLATION OF PHP ###
 ###########################
 
-$phpname = "php-7.3.1"
+$phpname = "php-7.3.7"
 $phpzipname = "$phpname-nts-Win32-VC15-x64.zip"
 $phpzippath = "$packagesdir\$phpzipname"
 $phpzipurl = "https://windows.php.net/downloads/releases/$phpzipname"
