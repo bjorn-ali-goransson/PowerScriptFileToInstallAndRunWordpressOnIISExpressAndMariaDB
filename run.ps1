@@ -145,7 +145,13 @@ if(!(Test-Path "$webdir\wp-config.php")) {
 ### INSTALLATION OF ADMINER ###
 ###############################
 
-$adminerpath = "$webdir\adminer.php"
+$unsecurepath = "$webdir\unsecure"
+
+if (!(Test-Path $unsecurepath)) {
+    New-Item -Path $unsecurepath -ItemType "directory"
+}
+
+$adminerpath = "$unsecurepath\adminer.php"
 $adminerurl = "https://www.adminer.org/latest.php"
 
 if (!(Test-Path $adminerpath)) {
@@ -157,6 +163,22 @@ if (!(Test-Path $adminerpath)) {
     }
     catch {
         Write-Output "ERROR: Could not download $adminerurl"
+        exit
+    }
+}
+
+$adminerwppath = "$unsecurepath\adminer-wp.php"
+$adminerwpurl = "https://gist.githubusercontent.com/bjorn-ali-goransson/51d141f48accefcb45fbc7bb058e18bc/raw/e2f8f3178ae291c2138858ce85ae8e497e269beb/adminer-wp.php"
+
+if (!(Test-Path $adminerwppath)) {
+    Write-Output "Adminer-WP not installed"
+    Write-Output "Downloading Adminer-WP from $adminerwpurl"
+
+    try {
+        Invoke-WebRequest -Uri $adminerwpurl -OutFile $adminerwppath
+    }
+    catch {
+        Write-Output "ERROR: Could not download $adminerwpurl"
         exit
     }
 }
