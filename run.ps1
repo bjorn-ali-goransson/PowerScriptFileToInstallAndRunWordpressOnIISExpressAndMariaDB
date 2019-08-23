@@ -141,6 +141,28 @@ if(!(Test-Path "$webdir\wp-config.php")) {
 
 
 
+###############################
+### INSTALLATION OF ADMINER ###
+###############################
+
+$adminerpath = "$webdir\adminer.php"
+$adminerurl = "https://www.adminer.org/latest.php"
+
+if (!(Test-Path $adminerpath)) {
+    Write-Output "Adminer not installed"
+    Write-Output "Downloading Adminer from $adminerurl"
+
+    try {
+        Invoke-WebRequest -Uri $adminerurl -OutFile $adminerpath
+    }
+    catch {
+        Write-Output "ERROR: Could not download $adminerurl"
+        exit
+    }
+}
+
+
+
 ###################################
 ### INSTALLATION OF IIS EXPRESS ###
 ###################################
