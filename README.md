@@ -4,7 +4,7 @@ Does not modify the computers configuration - everything is installed locally in
 
 Create a project folder somewhere. Packages are downloaded to your home folder, under `.wpnib`.
 
-Paste the run.ps1 script in there and go `ps run.ps1` from the command prompt.
+Paste the run.ps1 script in there and go `./run.ps1` from a powershell-enabled console (run `powershell` from the command prompt).
 
     projects-root
      `--mariadb  # Your portable MariaDB installation
