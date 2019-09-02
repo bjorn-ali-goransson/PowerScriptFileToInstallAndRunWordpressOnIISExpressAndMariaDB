@@ -15,3 +15,5 @@ Paste the run.ps1 script in there and go `./run.ps1` from a powershell-enabled c
 The only thing shared between projects are some cached downloaded zip files.
 
 Press enter to kill everything. Run `ps run.ps1` to start again.
+
+To start adminer (the phpMyAdmin clone), navigate to `/unsecure/adminer-wp.php` to log in automatically.
