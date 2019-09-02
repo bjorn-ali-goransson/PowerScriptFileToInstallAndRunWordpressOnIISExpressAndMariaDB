@@ -17,7 +17,7 @@ if (!(Test-Path $webdir)) {
 ### INSTALLATION OF MARIADB ###
 ###############################
 
-$mariadbname = "mariadb-10.3.13"
+$mariadbname = "mariadb-10.3.17"
 $mariadbzipname = "$mariadbname-winx64.zip"
 $mariadbzippath = "$packagesdir\$mariadbzipname"
 $mariadbzipurl = "https://downloads.mariadb.org/f/$mariadbname/winx64-packages/$mariadbname-winx64.zip?serve"
@@ -51,7 +51,7 @@ if (!(Test-Path $mariadbdir)) {
 ### INSTALLATION OF PHP ###
 ###########################
 
-$phpname = "php-7.3.7"
+$phpname = "php-7.3.9"
 $phpzipname = "$phpname-nts-Win32-VC15-x64.zip"
 $phpzippath = "$packagesdir\$phpzipname"
 $phpzipurl = "https://windows.php.net/downloads/releases/$phpzipname"
