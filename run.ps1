@@ -185,6 +185,33 @@ if (!(Test-Path $adminerwppath)) {
 
 
 
+#########################################
+### INSTALLATION OF SEARCH REPLACE DB ###
+#########################################
+
+$searchreplacedbversion = "3.1"
+$searchreplacedbpath = "$unsecurepath\Search-Replace-DB-$searchreplacedbversion"
+$searchreplacedbzipurl = "https://github.com/interconnectit/Search-Replace-DB/archive/$searchreplacedbversion.zip"
+$searchreplacedbzippath = "$packagesdir\Search-Replace-DB-$searchreplacedbversion.zip"
+
+if (!(Test-Path $searchreplacedbpath)) {
+    Write-Output "Search Replace DB not installed"
+    Write-Output "Downloading Search Replace DB from $searchreplacedbzipurl"
+
+    try {
+        Invoke-WebRequest -Uri $searchreplacedbzipurl -OutFile $searchreplacedbzippath
+    }
+    catch {
+        Write-Output "ERROR: Could not download $searchreplacedbzipurl"
+        exit
+    }
+
+    Write-Output "Installing Search Replace DB to $searchreplacedbpath"
+    Expand-Archive $searchreplacedbzippath -DestinationPath $unsecurepath
+}
+
+
+
 ###################################
 ### INSTALLATION OF IIS EXPRESS ###
 ###################################
