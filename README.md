@@ -1,4 +1,4 @@
-Installs MariaDB, PHP and Wordpress (and Adminer) to a new IIS Express site.
+Installs MariaDB, PHP and Wordpress (and Adminer, and Search Replace DB) to a new IIS Express site.
 
 Does not modify the computers configuration - everything is installed locally in the projects root folder.
 
