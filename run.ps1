@@ -51,10 +51,10 @@ if (!(Test-Path $mariadbdir)) {
 ### INSTALLATION OF PHP ###
 ###########################
 
-$phpname = "php-7.3.9"
-$phpzipname = "$phpname-nts-Win32-VC15-x64.zip"
+$phpname = "php-7.3"
+$phpzipname = "$phpname-nts-Win32-VC15-x64-latest.zip"
 $phpzippath = "$packagesdir\$phpzipname"
-$phpzipurl = "https://windows.php.net/downloads/releases/$phpzipname"
+$phpzipurl = "https://windows.php.net/downloads/releases/latest/$phpzipname"
 $phpdir = "$cd\$phpname"
 $phppath = "$phpdir\php-cgi.exe"
 $php = "$phpdir\php.exe"
